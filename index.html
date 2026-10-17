@@ -36,69 +36,11 @@
       font-family: var(--serif); font-size: 19px; line-height: 1.65;
       overflow-x: hidden; -webkit-font-smoothing: antialiased;
     }
-    body.locked { overflow: hidden; height: 100vh; }
     img, svg { display: block; }
     .eyebrow { font-family: var(--sans); font-weight: 400; font-size: .7rem; letter-spacing: .38em; text-transform: uppercase; color: var(--accent-deep); margin: 0; }
     h2.title { font-family: var(--script); font-weight: 400; font-size: clamp(3rem, 12vw, 4rem); line-height: 1.15; margin: .2em 0 0; color: var(--fg); }
 
-    /* ================= ENVELOPE INTRO ================= */
-    .intro {
-      position: fixed; inset: 0; z-index: 100; display: grid; place-items: center;
-      background: radial-gradient(ellipse at 50% 40%, #fffdf9 0%, var(--bg) 55%, #ece4d6 100%);
-      transition: opacity 1.1s ease, visibility 0s linear 1.1s;
-    }
-    .intro.done { opacity: 0; visibility: hidden; }
-    .intro-inner { display: grid; justify-items: center; gap: 34px; }
-    .envelope {
-      position: relative; width: min(84vw, 360px); aspect-ratio: 1.45; cursor: pointer;
-      perspective: 1200px; filter: drop-shadow(0 30px 40px rgba(42,39,35,.22));
-      animation: floaty 4s ease-in-out infinite;
-    }
-    @keyframes floaty { 50% { transform: translateY(-8px); } }
-    .intro.opening .envelope { animation: none; }
-    .env-back, .env-front, .env-flap { position: absolute; inset: 0; }
-    .env-back { background: #e6dbc9; border-radius: 6px; }
-    .letter {
-      position: absolute; left: 7%; right: 7%; top: 8%; height: 84%;
-      background: var(--card); border-radius: 4px; border: 1px solid var(--line);
-      display: grid; place-items: center; text-align: center; padding: 10px;
-      transition: transform 1.2s var(--ease) .55s;
-    }
-    .letter .n { font-family: var(--script); font-size: clamp(2rem, 9vw, 2.6rem); line-height: 1.1; }
-    .letter .eyebrow { font-size: .55rem; margin-top: 6px; }
-    .env-front {
-      z-index: 3; border-radius: 6px;
-      clip-path: polygon(0 0, 50% 56%, 100% 0, 100% 100%, 0 100%);
-      background: linear-gradient(160deg, #f6efe3, #eadfcd);
-    }
-    .env-front::after {
-      content: ""; position: absolute; inset: 0;
-      background: linear-gradient(to top right, transparent 49.7%, rgba(154,123,76,.2) 50%, transparent 50.4%),
-                  linear-gradient(to top left, transparent 49.7%, rgba(154,123,76,.2) 50%, transparent 50.4%);
-    }
-    .env-flap {
-      height: 62%; z-index: 4; transform-origin: top center;
-      clip-path: polygon(0 0, 100% 0, 50% 100%);
-      background: linear-gradient(180deg, #efe4d2, #e0d1b7);
-      transition: transform .8s var(--ease), z-index 0s linear .4s;
-    }
-    .seal {
-      position: absolute; left: 50%; top: 62%; z-index: 5; transform: translate(-50%, -50%);
-      width: 74px; height: 74px; border-radius: 50%;
-      background: radial-gradient(circle at 35% 30%, #d6b98a, var(--accent) 45%, #8a6c3f);
-      box-shadow: 0 6px 14px rgba(90,60,25,.35), inset 0 0 0 5px rgba(255,255,255,.12), inset 0 0 0 6px rgba(120,90,50,.45);
-      color: #fffaf0; font-family: var(--script); font-size: 1.7rem; line-height: 1;
-      display: grid; place-items: center;
-      transition: transform .5s var(--ease), opacity .4s ease;
-    }
-    .seal::before { content: ""; position: absolute; inset: -6px; border-radius: 50%; border: 1px solid var(--accent); animation: ring 2.2s ease-out infinite; }
     @keyframes ring { from { transform: scale(.9); opacity: .9; } to { transform: scale(1.5); opacity: 0; } }
-    .intro.opening .seal { transform: translate(-50%, -50%) scale(.3) rotate(-40deg); opacity: 0; }
-    .intro.opening .env-flap { transform: rotateX(180deg); z-index: 1; }
-    .intro.opening .letter { transform: translateY(-62%); z-index: 2; }
-    .tap-hint { font-family: var(--script); font-size: 2rem; color: var(--muted); animation: hint 2.4s ease-in-out infinite; }
-    @keyframes hint { 50% { opacity: .4; } }
-    .intro.opening .tap-hint, .intro.opening .eyebrow.top { opacity: 0; transition: opacity .4s; }
 
     /* ================= MUSIC BUTTON ================= */
     .music {
@@ -304,27 +246,7 @@
     }
   </style>
 </head>
-<body class="locked">
-
-  <!-- ===== Envelope intro ===== -->
-  <div class="intro" id="intro">
-    <div class="intro-inner">
-      <p class="eyebrow top">You are invited</p>
-      <div class="envelope" id="envelope" role="button" tabindex="0" aria-label="Open the invitation">
-        <div class="env-back"></div>
-        <div class="letter">
-          <div>
-            <div class="n">Omar &amp; Gana</div>
-            <p class="eyebrow">30 · 10 · 2026</p>
-          </div>
-        </div>
-        <div class="env-front"></div>
-        <div class="env-flap"></div>
-        <div class="seal" aria-hidden="true">O&amp;G</div>
-      </div>
-      <div class="tap-hint">Tap to open</div>
-    </div>
-  </div>
+<body>
 
   <canvas id="sparkles" aria-hidden="true"></canvas>
 
@@ -513,7 +435,7 @@
     const audio = document.getElementById('bgMusic');
     const musicBtn = document.getElementById('musicBtn');
     const credit = document.getElementById('credit');
-    let yt = null, ytReady = false, useFallback = false;
+    let yt = null, ytReady = false, useFallback = false, musicWanted = false;
 
     function setPlaying(on) {
       musicBtn.classList.toggle('playing', on);
@@ -534,6 +456,7 @@
       try { yt && yt.stopVideo(); } catch (e) {}
     }
     function playMusic() {
+      musicWanted = true;
       if (!useFallback && ytReady) {
         yt.setVolume(0); yt.playVideo();
         fade(v => yt.setVolume(v), 70);
@@ -559,7 +482,7 @@
         playerVars: { autoplay: 0, controls: 0, loop: 1, playlist: YT_ID, playsinline: 1, rel: 0 },
         events: {
           onReady: () => { ytReady = true; },
-          onError: () => { const wasOn = isPlaying() || intro.classList.contains('opening'); switchToFallback(); if (wasOn) playMusic(); },
+          onError: () => { const wasOn = isPlaying() || musicWanted; switchToFallback(); if (wasOn) playMusic(); },
           onStateChange: e => { if (!useFallback) setPlaying(e.data === YT.PlayerState.PLAYING || e.data === YT.PlayerState.BUFFERING); }
         }
       });
@@ -569,23 +492,19 @@
     ytScript.onerror = switchToFallback;
     document.head.appendChild(ytScript);
 
-    // Envelope intro
-    const intro = document.getElementById('intro');
-    const envelope = document.getElementById('envelope');
-    function openInvite() {
-      if (intro.classList.contains('opening')) return;
-      intro.classList.add('opening');
-      playMusic();
-      setTimeout(() => {
-        intro.classList.add('done');
-        document.body.classList.remove('locked');
-        hero.classList.add('ready');
-        musicBtn.classList.add('show');
-        burst();
-      }, 2000);
+    // Start the hero animation right away; browsers only allow sound after
+    // the guest's first tap, so the music starts on the first interaction
+    requestAnimationFrame(() => {
+      hero.classList.add('ready');
+      musicBtn.classList.add('show');
+      burst();
+    });
+    const unlockEvents = ['pointerdown', 'touchstart', 'keydown'];
+    function onFirstInteraction(e) {
+      unlockEvents.forEach(ev => removeEventListener(ev, onFirstInteraction, true));
+      if (!musicBtn.contains(e.target)) playMusic();
     }
-    envelope.addEventListener('click', openInvite);
-    envelope.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openInvite(); } });
+    unlockEvents.forEach(ev => addEventListener(ev, onFirstInteraction, { capture: true, passive: true }));
 
     // Countdown with rolling digits
     const units = ['d', 'h', 'm', 's'].map(id => document.getElementById(id));
@@ -655,7 +574,7 @@
     }, { threshold: .15, rootMargin: '0px 0px -40px 0px' });
     document.querySelectorAll('.reveal, .zoom, .photo').forEach(el => io.observe(el));
 
-    // Gold sparkles: a burst when the envelope opens, then a gentle ambient drift
+    // Gold sparkles: a burst on arrival, then a gentle ambient drift
     const cv = document.getElementById('sparkles');
     const ctx = cv.getContext('2d');
     let W, H, dpr, parts = [];
