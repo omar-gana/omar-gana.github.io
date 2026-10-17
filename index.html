@@ -296,6 +296,7 @@
     .closing .eyebrow { color: var(--muted); }
     .credit { margin-top: 3rem; font-family: var(--sans); font-size: .6rem; letter-spacing: .05em; color: #a69a8b; }
     .credit a { color: inherit; }
+    .yt-wrap { position: fixed; left: 0; bottom: 0; width: 2px; height: 2px; overflow: hidden; opacity: 0; pointer-events: none; z-index: -1; }
 
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; transition-delay: 0s !important; }
@@ -330,7 +331,8 @@
   <button class="music" id="musicBtn" aria-label="Play music">
     <span class="bars"><i></i><i></i><i></i><i></i></span>
   </button>
-  <audio id="bgMusic" src="assets/music.mp3" loop preload="auto"></audio>
+  <audio id="bgMusic" src="assets/music.mp3" loop preload="none"></audio>
+  <div class="yt-wrap" aria-hidden="true"><div id="ytPlayer"></div></div>
 
   <div class="lightbox" id="lightbox"><img alt="" /></div>
 
@@ -480,7 +482,7 @@
         <p class="quote reveal">“Your presence is the most beautiful part of our story.”</p>
         <p class="sig reveal d1">Omar &amp; Gana</p>
         <p class="eyebrow reveal d2">30 · 10 · 2026</p>
-        <p class="credit">Music: “Canon in D Major” by Kevin MacLeod (<a href="https://incompetech.com" target="_blank" rel="noopener">incompetech.com</a>), licensed under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a></p>
+        <p class="credit" id="credit" hidden>Music: “Canon in D Major” by Kevin MacLeod (<a href="https://incompetech.com" target="_blank" rel="noopener">incompetech.com</a>), licensed under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a></p>
       </div>
     </section>
   </main>
@@ -505,24 +507,67 @@
       el.innerHTML = [...el.textContent].map((c, i) => `<span class="ch" style="--i:${i + offset}">${c}</span>`).join('');
     });
 
-    // Music
+    // Music: Brooklyn Duo's "Canon in D" through the YouTube player,
+    // falling back to the bundled MP3 if YouTube is unavailable
+    const YT_ID = 'Ptk_1Dc2iPY';
     const audio = document.getElementById('bgMusic');
     const musicBtn = document.getElementById('musicBtn');
-    audio.volume = 0;
-    function fadeVolume(to, ms = 1500) {
-      const from = audio.volume, start = performance.now();
+    const credit = document.getElementById('credit');
+    let yt = null, ytReady = false, useFallback = false;
+
+    function setPlaying(on) {
+      musicBtn.classList.toggle('playing', on);
+      musicBtn.setAttribute('aria-label', on ? 'Pause music' : 'Play music');
+    }
+    function fade(set, to, ms = 1500) {
+      const start = performance.now();
       (function step(t) {
         const k = Math.min(1, (t - start) / ms);
-        audio.volume = from + (to - from) * k;
+        set(to * k);
         if (k < 1) requestAnimationFrame(step);
       })(start);
     }
-    function playMusic() {
-      audio.play().then(() => fadeVolume(.6)).catch(() => {});
+    function switchToFallback() {
+      if (useFallback) return;
+      useFallback = true;
+      credit.hidden = false;
+      try { yt && yt.stopVideo(); } catch (e) {}
     }
-    audio.addEventListener('play', () => { musicBtn.classList.add('playing'); musicBtn.setAttribute('aria-label', 'Pause music'); });
-    audio.addEventListener('pause', () => { musicBtn.classList.remove('playing'); musicBtn.setAttribute('aria-label', 'Play music'); });
-    musicBtn.addEventListener('click', () => audio.paused ? playMusic() : audio.pause());
+    function playMusic() {
+      if (!useFallback && ytReady) {
+        yt.setVolume(0); yt.playVideo();
+        fade(v => yt.setVolume(v), 70);
+        return;
+      }
+      switchToFallback();
+      audio.volume = 0;
+      audio.play().then(() => fade(v => audio.volume = v, .6)).catch(() => {});
+    }
+    function pauseMusic() {
+      useFallback ? audio.pause() : yt.pauseVideo();
+    }
+    function isPlaying() {
+      return useFallback ? !audio.paused : ytReady && yt.getPlayerState() === YT.PlayerState.PLAYING;
+    }
+    audio.addEventListener('play', () => setPlaying(true));
+    audio.addEventListener('pause', () => setPlaying(false));
+    musicBtn.addEventListener('click', () => isPlaying() ? pauseMusic() : playMusic());
+
+    window.onYouTubeIframeAPIReady = () => {
+      yt = new YT.Player('ytPlayer', {
+        videoId: YT_ID,
+        playerVars: { autoplay: 0, controls: 0, loop: 1, playlist: YT_ID, playsinline: 1, rel: 0 },
+        events: {
+          onReady: () => { ytReady = true; },
+          onError: () => { const wasOn = isPlaying() || intro.classList.contains('opening'); switchToFallback(); if (wasOn) playMusic(); },
+          onStateChange: e => { if (!useFallback) setPlaying(e.data === YT.PlayerState.PLAYING || e.data === YT.PlayerState.BUFFERING); }
+        }
+      });
+    };
+    const ytScript = document.createElement('script');
+    ytScript.src = 'https://www.youtube.com/iframe_api';
+    ytScript.onerror = switchToFallback;
+    document.head.appendChild(ytScript);
 
     // Envelope intro
     const intro = document.getElementById('intro');
